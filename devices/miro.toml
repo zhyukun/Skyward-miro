@@ -1,3 +1,5 @@
+# Adapted for miro (REDMI K80 Pro) by zhyukun, 2026.
+# Upstream: kirklin/skyward, GPL-3.0-or-later; original copyright retained.
 [device]
 codename = "miro"
 brand = "Redmi"
@@ -20,7 +22,21 @@ density = 600
 sources = ["vendor_boot", "vendor_dlkm", "vendor", "system_dlkm"]
 # The touchscreen: FocalTech's, over SPI behind Xiaomi's touch layer, the
 # one touch driver the phone's own modules.load lists.
-load = ["focaltech_touch"]
+# The NXP secure element/NFC controller driver: without it no /dev/nq-nci
+# node comes up, so the secure element service cannot enumerate the eSE and
+# the NXP Weaver cannot read its slots. Its modules.dep dependencies
+# (smcinvoke_dlkm, mem_object, si_core_module, qseecom_proxy) load first.
+load = ["focaltech_touch", "nxp-nci"]
+
+# The secure element's node, which the NXP driver makes. Stock
+# /vendor/etc/ueventd.rc gives /dev/nq-nci to nfc:nfc 0660; a freshly loaded
+# recovery module must get those permissions before the secure element HAL
+# opens the node.
+[[owners]]
+user = "nfc"
+group = "nfc"
+mode = 0o660
+paths = ["/dev/nq-nci"]
 
 # As on the 17 Ultra, no init script of the phone's starts touch_report:
 # the touch feature service turns the controller's raw frames into
@@ -46,25 +62,36 @@ oneshot = true
 user = "root"
 groups = ["root", "system", "wakelock", "graphics"]
 
-# WLAN: the peach node in the device tree, which either of the two Peach
-# drivers the phone's own modules.load lists and its modules.blocklist
-# leaves may drive, by the chip's revision; the phone loads both, and so do
-# these. Their cfg80211 asks for rfkill, one of the kernel's own modules in
-# system_dlkm, as the 17 Ultra's does. Its recovery covers the vendor
-# partition's firmware folder with the modem's, as the 13 Ultra's does, so
-# the settings and the MAC address are given to the loader again, under
-# the names each driver asks for: the settings from the vendor partition,
-# the address from where the vendor's links point in persist.
-# wpa_supplicant runs on the recovery's own libraries before the vendor
-# partition's, as on the 17 Ultra.
+# BootControl: vendor's AIDL boot HAL, started here because its own init's
+# early_hal class never runs in the recovery. Root:root as its rc says;
+# IBootControl/default is declared by both the system and vendor vintf
+# manifests. Verified on the A17 recovery: the binary stays on binder.
+[[service]]
+path = "/vendor/bin/hw/android.hardware.boot-service.qti"
+libraries = ["/system/lib64", "/vendor/lib64"]
+ready_service = "android.hardware.boot.IBootControl/default"
+user = "root"
+groups = ["root"]
+
+# persist keeps the phone's saved settings, touch/camera/sensor calibrations
+# and the secure world's own files; fstab.qcom mounts it at /mnt/vendor/persist.
+[partitions]
+mounted = ["persist"]
+
+# WLAN: the peach node in the device tree. The chip enumerates revision 0x2,
+# so the peach_v2 host driver drives it; the plain peach driver is built for
+# revision 0x1 and cnss rejects it, and this loader stops at the first module
+# that fails, so only peach_v2 is listed. Their cfg80211 asks for rfkill, one
+# of the kernel's own modules in system_dlkm, as the 17 Ultra's does. The
+# settings are handed to the loader from the vendor partition; on this build
+# persist/wlan holds no wlan_mac.bin (the address comes from elsewhere), so
+# none is placed for the loader. wpa_supplicant runs on the recovery's own
+# libraries before the vendor partition's, as on the 17 Ultra.
 [wlan]
-modules = ["rfkill", "qca_cld3_peach", "qca_cld3_peach_v2"]
+modules = ["rfkill", "qca_cld3_peach_v2"]
 writes = [{ path = "/sys/kernel/cnss/fs_ready", value = "1" }]
 firmware = [
-    { name = "wlan/qca_cld/peach/WCNSS_qcom_cfg.ini", path = "/vendor/etc/wifi/peach/WCNSS_qcom_cfg.ini" },
-    { name = "wlan/qca_cld/peach/wlan_mac.bin", partition = "persist", path = "wlan/wlan_mac.bin" },
     { name = "wlan/qca_cld/peach_v2/WCNSS_qcom_cfg.ini", path = "/vendor/etc/wifi/peach_v2/WCNSS_qcom_cfg.ini" },
-    { name = "wlan/qca_cld/peach_v2/wlan_mac.bin", partition = "persist", path = "wlan/wlan_mac.bin" },
 ]
 interface = "wlan0"
 supplicant = "/vendor/bin/hw/wpa_supplicant"
