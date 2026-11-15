@@ -1,18 +1,74 @@
 ![Skyward Recovery](assets/hero.jpg)
 
-# Skyward
+# Skyward V0.3.1 For Miro
 
 English | [简体中文](README.zh-CN.md)
 
-> **miro fork**: this fork carries the REDMI K80 Pro (`miro`) adaptation by zhyukun. Device status, known issues, flashing and disclaimer are in [README.miro.md](README.miro.md). Upstream: [kirklin/skyward](https://github.com/kirklin/skyward).
+> **miro fork** — a personal fork of [kirklin/skyward](https://github.com/kirklin/skyward) carrying the REDMI K80 Pro (`miro`) adaptation by zhyukun. The upstream project, Kirk Lin's copyright and `LICENSE` are kept as-is; only the adaptation changes are added here. The adaptation lives on the `miro` branch; `main` keeps the upstream baseline unchanged.
 
-Skyward is a recovery written in Rust, from scratch.
+## Device
 
-<p align="center">
-  <img src="assets/home.png" width="30%" alt="Home">
-  <img src="assets/settings-dark.png" width="30%" alt="Settings in dark mode">
-  <img src="assets/time-zone.png" width="30%" alt="Time zone">
-</p>
+| Item | Value |
+| --- | --- |
+| Device | REDMI K80 Pro / POCO F7 Ultra, codename `miro`, CN 24122RKC7C |
+| SoC | Snapdragon 8 Elite SM8750 (platform sun, soc_id 618) |
+| Base | Android 17 / SDK 37, HyperOS 4.0.0.8, 16KB page, arm64-v8a |
+| Layout | A/B, dedicated recovery partition; active slot `_a` |
+| Build | 2026-11-15, release **Skyward V0.3.1 For Miro** |
+
+> [!WARNING]
+> ### Scope — read before flashing
+> This recovery image has only been tested on a REDMI K80 Pro (`miro`) running **HyperOS 4.0.0.8 (Android 17)**. Other devices are not recommended for flashing. The same model on **HyperOS 3.X (Android 16)** is also **not** recommended — the Android version differs.
+
+## Verified on device
+
+- **Touch**: works after screen lock and waking from off (the touch setting is rewritten by a background thread on a 1 s timer); backup and restore work.
+- **Data decryption**: cold start passes on the first try after entering the lock password.
+- **WLAN**: peach_v2 driver; `wlan0` probes on demand when the WLAN page is opened.
+- **Other**: slot reading, persist mount, BootControl service, MTP / ADB.
+
+## Download
+
+Image: [skyward-0.3.1-miro-a17-zhyukun.img](https://github.com/zhyukun/Skyward-miro/releases/download/v1/skyward-0.3.1-miro-a17-zhyukun.img) · [Release page](https://github.com/zhyukun/Skyward-miro/releases/tag/v1)
+
+```text
+file    skyward-0.3.1-miro-a17-zhyukun.img
+size    104,857,600 bytes (100 MiB)
+SHA-256 9e7110209ba45a36897b0560f706300674b8cb4a598de47ed2a505a292a0fd18
+```
+
+## Flashing and rollback
+
+Only flash the recovery partition:
+
+```sh
+fastboot devices
+fastboot flash recovery_a skyward-0.3.1-miro-a17-zhyukun.img
+fastboot reboot recovery
+```
+
+- Requires an unlocked bootloader.
+- Do **not** touch `boot` / `init_boot` / `vendor_boot` / `system` / `vendor` / `data`; do not tap any Wipe, format or factory reset inside recovery.
+- Roll back: fastboot-flash the stock recovery backup or a previous image.
+
+## Known issues and open items
+
+1. **Data decryption stability not fully proven**
+   - Only a single cold-start pass; no multi-round comparison yet; the exact cause of an occasional failure has not been captured to disk.
+   - The readiness race root cause is unconfirmed; the strongbox instance never comes up.
+   - The exact enum name of error `-28` is unverified; the "decrypt now vs warm-up first" comparison has not been run.
+   - Whether whole-device s2idle adds a touch factor has not been ruled out.
+2. **Non-fatal WLAN warnings**: `hdd_config_data_stall_param` fail, bmiss sysfs node creation failure, 6GHz disabled, MLO MLD ID 0 exists; `wlan0` only probes after the WLAN page is opened.
+3. **Vibration motor** reuses the 17 Ultra frequency and strength parameters; not measured on this device's motor yet.
+4. **Upstream changes not yet merged**: open PRs #33 (crypto walks all protectors), #29 (pack includes missing stock ramdisk files), #60 (WLAN firmware alternatives), #48 (myron A17 PIN decrypt), #43 (socrates decrypt compatibility).
+5. **System version**: built on the HyperOS 4.0.0.8 base; upgrading to 4.0.3.0 requires re-dumping the recovery base and repacking.
+6. **Update mechanism**: only a manual one-shot online query from the update page; the asset codename and SHA-256 are checked, with no independent GPG / signature verification.
+
+## Disclaimer
+
+As of the 2026-11-15 build, upstream Skyward has not published a recovery image for this device on HyperOS 4.0. If an update is detected, make sure the package supports the current device and Android version. The adapter zhyukun takes no responsibility for data loss, device damage, or any other consequence caused by flashing a wrong image.
+
+---
 
 ## Features
 
@@ -118,7 +174,6 @@ not been verified.
 | 🚧 Xiaomi 17 Pro Max | `popsicle` | OS4.0.4.0.XPBCNXM (Android 17) |
 | 🚧 Xiaomi 17 Max | `byron` | OS3.0.310.0.WAFCNXM (Android 16) |
 | 🚧 REDMI K80 | `zorn` | OS3.0.309.0.WOKCNXM (Android 16) |
-| 🚧 REDMI K80 Pro | `miro` | OS3.0.305.0.WOMCNXM (Android 16) |
 | 🚧 REDMI K90 | `annibale` | OS3.0.307.0.WPKCNXM (Android 16) |
 | 🚧 REDMI K90 Pro Max | `myron` | OS4.0.4.0.XPMCNXM (Android 17) |
 | 🚧 REDMI K90 Ultra | `warsaw` | OS3.0.309.0.WHPCNXM (Android 16) |
@@ -198,73 +253,6 @@ A running system switches by writing `boot-recovery` with
 misc, and restarting into recovery. Where the bootloader starts the slot again, as
 the 13 Ultra's can with a USB cable in, Skyward's program finds the request in misc
 at the next start and brings Skyward up before anything else.
-
-## Building
-
-Skyward builds with the version of Rust that `rust-toolchain.toml` names, with its
-`aarch64-linux-android` target, the Android NDK r29 and
-[cargo-ndk](https://github.com/bbqsrc/cargo-ndk). The recovery service is built for
-the phone, and the packer for the computer:
-
-```sh
-cargo ndk -t arm64-v8a --platform 30 build --release -p skyward
-cargo build --release -p skyward-pack
-```
-
-The second system's first program runs before any library is there to load, so it
-is built as a static program:
-
-```sh
-RUSTFLAGS="-C target-feature=+crt-static" cargo ndk -t arm64-v8a --platform 30 build --release -p skyward-system-init --target-dir target/system-init
-```
-
-The packer takes the stock recovery partition out of the build's full update
-package on Xiaomi's server, reading only the part of the package the partition is
-in, and checks its SHA-256 against the device file:
-
-```sh
-target/release/skyward-pack stock --config devices/nezha.toml --out target/stock/nezha/recovery.img
-```
-
-Then it builds the image on top of it:
-
-```sh
-target/release/skyward-pack recovery \
-  --stock target/stock/nezha/recovery.img \
-  --binary target/aarch64-linux-android/release/skyward \
-  --system-init target/system-init/aarch64-linux-android/release/system-init \
-  --config devices/nezha.toml \
-  --font resources/fonts/MiSansVF.ttf \
-  --mono resources/fonts/KirkMono-Regular.ttf \
-  --mono-license resources/fonts/KirkMono-OFL.txt \
-  --out target/skyward-nezha.img
-```
-
-Tests and lints run on the computer; what runs only on the phone is linted for it:
-
-```sh
-cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo ndk -t arm64-v8a --platform 30 clippy --workspace --all-targets -- -D warnings
-```
-
-The tests whose names start with `on_the_phone` make filesystems, mount them and
-set encryption keys, which only a phone does. With a phone in Skyward attached over
-adb, its data partition open, `cargo ndk` pushes each test program to the phone and
-runs it there, one test at a time:
-
-```sh
-cargo ndk -t arm64-v8a --platform 30 test -p skyward -p skyward-block -p skyward-files -p skyward-mtp on_the_phone -- --test-threads=1
-```
-
-`skyward-preview` draws the pages on the computer, as PNG files, without a phone:
-each page whole, as a long screenshot shows it, in the states it can be in, and the
-screen at moments of touches and motion. `--lang` picks the language by a locale
-such as `en` or `zh-TW`:
-
-```sh
-cargo run --release -p skyward-preview -- target/preview --lang en
-```
 
 ## License
 

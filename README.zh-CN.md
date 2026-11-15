@@ -1,18 +1,74 @@
 ![Skyward Recovery](assets/hero.jpg)
 
-# Skyward
+# Skyward V0.3.1 For Miro
 
 [English](README.md) | 简体中文
 
-> **miro 适配分支**：本 fork 为 REDMI K80 Pro（`miro`）的适配，由 zhyukun 完成。机型状态、已知问题、刷入与免责说明见 [README.miro.md](README.miro.md)。上游：[kirklin/skyward](https://github.com/kirklin/skyward)。
+> **miro 适配分支** —— [kirklin/skyward](https://github.com/kirklin/skyward) 的个人 fork，由 zhyukun 完成 REDMI K80 Pro（`miro`）适配。上游项目、原作者 Kirk Lin 的版权与 `LICENSE` 均原样保留，本 fork 只在其上追加适配改动。适配内容位于 `miro` 分支；`main` 保留上游基线不变。
 
-Skyward 是使用 Rust 编写的 recovery，从零开始编写。
+## 机型
 
-<p align="center">
-  <img src="assets/home.png" width="30%" alt="首页">
-  <img src="assets/settings-dark.png" width="30%" alt="深色模式下的设置">
-  <img src="assets/time-zone.png" width="30%" alt="时区">
-</p>
+| 项 | 值 |
+| --- | --- |
+| 设备 | REDMI K80 Pro / POCO F7 Ultra，代号 `miro`，国行 24122RKC7C |
+| SoC | 骁龙 8 Elite SM8750（平台 sun，soc_id 618） |
+| 系统基底 | Android 17 / SDK 37，HyperOS 4.0.0.8，16KB 页，arm64-v8a |
+| 分区方案 | A/B，独立 recovery 分区；当前活动槽 `_a` |
+| 编译 | 2026-11-15，发布名 **Skyward V0.3.1 For Miro** |
+
+> [!WARNING]
+> ### 适用范围 · 刷入前必读
+> 本恢复环境映像包目前仅在运行 **HyperOS 4.0.0.8（Android 17）** 的 REDMI K80 Pro（`miro`）上测试，其他设备不建议刷入。同型号搭载 **HyperOS 3.X（Android 16）** 的手机也**不建议**刷入——Android 版本不同。
+
+## 已在真机验证
+
+- **触摸**：锁屏 / 息屏唤醒后仍可用（触摸设置由后台线程每秒定时重写），备份与恢复可用。
+- **data 解密**：冷启动输入锁屏密码可一次解密进入。
+- **WLAN**：peach_v2 主机驱动，`wlan0` 进入 WLAN 页时按需 probe。
+- **其他**：槽位读取、persist 挂载、BootControl 服务、MTP / ADB。
+
+## 下载
+
+镜像：[skyward-0.3.1-miro-a17-zhyukun.img](https://github.com/zhyukun/Skyward-miro/releases/download/v1/skyward-0.3.1-miro-a17-zhyukun.img) · [Release 页面](https://github.com/zhyukun/Skyward-miro/releases/tag/v1)
+
+```text
+file    skyward-0.3.1-miro-a17-zhyukun.img
+size    104,857,600 字节（100 MiB）
+SHA-256 9e7110209ba45a36897b0560f706300674b8cb4a598de47ed2a505a292a0fd18
+```
+
+## 刷入与回退
+
+仅刷 recovery 分区：
+
+```sh
+fastboot devices
+fastboot flash recovery_a skyward-0.3.1-miro-a17-zhyukun.img
+fastboot reboot recovery
+```
+
+- 需要已解锁的 bootloader。
+- **不触碰** `boot` / `init_boot` / `vendor_boot` / `system` / `vendor` / `data`；在 recovery 中请勿点击任何 Wipe、格式化或恢复出厂。
+- 回退：fastboot 刷回原厂 recovery 备份或上一版镜像。
+
+## 已知问题与未完成
+
+1. **data 解密稳定性尚未坐实**
+   - 仅冷启动一次通过，未做多轮对照；偶发失败的精确原因未落盘。
+   - 服务就绪竞争的根因尚未确认；strongbox 实例始终未拉起。
+   - 错误码 `-28` 的确切枚举名未核实；“立即解密 vs 预热后解密”的对照未做。
+   - 整机 s2idle 是否叠加触摸因素，尚未排除。
+2. **WLAN 非致命告警**：`hdd_config_data_stall_param` fail、bmiss sysfs 节点创建失败、6GHz disabled、MLO MLD ID 0 exists；`wlan0` 需进入 WLAN 页才 probe。
+3. **振动马达**：沿用 17 Ultra 的谐振频率与强度参数，尚未在本机马达上实测。
+4. **尚未纳入的上游改动**：open PR #33（crypto 遍历所有 protector）、#29（pack 纳入 stock ramdisk 缺文件）、#60（WLAN firmware alternatives）、#48（myron A17 PIN 解密）、#43（socrates 解密兼容）。
+5. **系统版本**：当前基于 HyperOS 4.0.0.8 基底；升级 4.0.3.0 需重新 dump recovery 基底并重打包。
+6. **更新机制**：仅在手动进入更新页且在线时向上游查询一次；校验 asset 机型名与 SHA-256，**无独立 GPG / 签名验签**。
+
+## 免责
+
+截至 2026-11-15 编译时，上游 Skyward 尚未发布适配本机（REDMI K80 Pro）HyperOS 4.0 的恢复模式映像包。若检测到更新，请务必确认待升级包支持当前机型与 Android 版本。因刷入错误映像造成的数据丢失、设备损坏等一切后果，适配者 zhyukun 概不承担责任。
+
+---
 
 ## 功能
 
@@ -109,7 +165,6 @@ Skyward 是使用 Rust 编写的 recovery，从零开始编写。
 | 🚧 小米 17 Pro Max | `popsicle` | OS4.0.4.0.XPBCNXM（Android 17） |
 | 🚧 小米 17 Max | `byron` | OS3.0.310.0.WAFCNXM（Android 16） |
 | 🚧 REDMI K80 | `zorn` | OS3.0.309.0.WOKCNXM（Android 16） |
-| 🚧 REDMI K80 Pro | `miro` | OS3.0.305.0.WOMCNXM（Android 16） |
 | 🚧 REDMI K90 | `annibale` | OS3.0.307.0.WPKCNXM（Android 16） |
 | 🚧 REDMI K90 Pro Max | `myron` | OS4.0.4.0.XPMCNXM（Android 17） |
 | 🚧 REDMI K90 Ultra | `warsaw` | OS3.0.309.0.WHPCNXM（Android 16） |
@@ -148,61 +203,6 @@ Skyward 可以在手机自身分区中的系统旁边安装第二系统，主系
 没有自带 init_boot 镜像的系统，从 Skyward 生成的 init_boot 镜像启动。其中的程序按照主系统第一阶段的方式加载第一阶段的内核模块，包括模块之间的软依赖和内核命令行中给模块的参数，然后在 data 分区中找到根文件系统，挂载之后运行其中的 `init`。启动过程中出现任何错误，这个程序都会进入 Skyward，和主系统启动失败时进入 recovery 一样：它在 misc 中留下原因，把当前槽位 recovery 分区中的 ramdisk 按照 bootloader 启动 recovery 时内核解包的方式解包到自己的 ramdisk 上，然后交给 Skyward 的第一个程序运行，所以无论 bootloader 怎样处理重启，都能进入 Skyward。Skyward 显示原因；用户在“双系统”中切换之前，下次启动的仍是第二系统。启动长时间没有进展时，这个程序改为重启到 recovery；交给第二系统之前手机重启的话，下次启动时它会在 misc 中看到同样的请求，先进入 Skyward。两种方式都无法进入 Skyward 时，手机停留在出错的地方，不会反复启动同一个系统。自带第一阶段 ramdisk 的系统可以运行 Skyward 放在 `/skyward/map` 的程序，它把根文件系统映射为块设备，并输出设备节点的路径。每次切换到第二系统，Skyward 都用自己带的程序写入第二系统的 init_boot 镜像，所以更新 Skyward 以后，第二系统也用新的程序启动。
 
 正在运行的系统也可以请求切换：在 misc 中写入 `boot-recovery` 和 `--switch_system=installed`，或者 `--switch_system=` 加上第二系统的 `id`，然后重启到 recovery。bootloader 仍然启动这个槽位的话（小米 13 Ultra 连着 USB 线时可能这样），Skyward 的程序会在下次启动时在 misc 中看到这个请求，先进入 Skyward。
-
-## 构建
-
-Skyward 使用 `rust-toolchain.toml` 指定版本的 Rust 和它的 `aarch64-linux-android` 目标、Android NDK r29 和 [cargo-ndk](https://github.com/bbqsrc/cargo-ndk) 构建。recovery 服务针对手机构建，打包工具针对电脑构建：
-
-```sh
-cargo ndk -t arm64-v8a --platform 30 build --release -p skyward
-cargo build --release -p skyward-pack
-```
-
-第二系统启动时运行的第一个程序在任何动态库可用之前运行，因此构建为静态程序：
-
-```sh
-RUSTFLAGS="-C target-feature=+crt-static" cargo ndk -t arm64-v8a --platform 30 build --release -p skyward-system-init --target-dir target/system-init
-```
-
-打包工具从小米服务器上这个版本的完整更新包中取出原厂 recovery 分区，只读取这个分区所在的部分，并且按照设备配置文件核对 SHA-256：
-
-```sh
-target/release/skyward-pack stock --config devices/nezha.toml --out target/stock/nezha/recovery.img
-```
-
-然后在它的基础上构建镜像：
-
-```sh
-target/release/skyward-pack recovery \
-  --stock target/stock/nezha/recovery.img \
-  --binary target/aarch64-linux-android/release/skyward \
-  --system-init target/system-init/aarch64-linux-android/release/system-init \
-  --config devices/nezha.toml \
-  --font resources/fonts/MiSansVF.ttf \
-  --mono resources/fonts/KirkMono-Regular.ttf \
-  --mono-license resources/fonts/KirkMono-OFL.txt \
-  --out target/skyward-nezha.img
-```
-
-测试和代码检查在电脑上运行；只在手机上运行的代码按照手机目标检查：
-
-```sh
-cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo ndk -t arm64-v8a --platform 30 clippy --workspace --all-targets -- -D warnings
-```
-
-名称以 `on_the_phone` 开头的测试会创建文件系统、挂载分区、设置加密密钥，这些操作只有手机能够完成。把一台已经进入 Skyward、数据分区已经打开的手机通过 adb 连接到电脑，`cargo ndk` 会把每个测试程序推送到手机上运行，测试逐个执行：
-
-```sh
-cargo ndk -t arm64-v8a --platform 30 test -p skyward -p skyward-block -p skyward-files -p skyward-mtp on_the_phone -- --test-threads=1
-```
-
-`skyward-preview` 无需手机，在电脑上把页面绘制成 PNG 文件：每个页面完整绘制成长截图的样子，覆盖它可能处于的各种状态，另外还有触摸和动画过程中某些时刻的屏幕。`--lang` 按照地区代码选择语言，例如 `en` 或者 `zh-TW`：
-
-```sh
-cargo run --release -p skyward-preview -- target/preview --lang en
-```
 
 ## 许可证
 
