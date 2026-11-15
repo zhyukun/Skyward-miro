@@ -4,6 +4,8 @@
 
 English | [简体中文](README.zh-CN.md)
 
+> **miro fork**: this fork carries the REDMI K80 Pro (`miro`) adaptation by zhyukun. Device status, known issues, flashing and disclaimer are in [README.miro.md](README.miro.md). Upstream: [kirklin/skyward](https://github.com/kirklin/skyward).
+
 Skyward is a recovery written in Rust, from scratch.
 
 <p align="center">

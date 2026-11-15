@@ -4,6 +4,8 @@
 
 [English](README.md) | 简体中文
 
+> **miro 适配分支**：本 fork 为 REDMI K80 Pro（`miro`）的适配，由 zhyukun 完成。机型状态、已知问题、刷入与免责说明见 [README.miro.md](README.miro.md)。上游：[kirklin/skyward](https://github.com/kirklin/skyward)。
+
 Skyward 是使用 Rust 编写的 recovery，从零开始编写。
 
 <p align="center">
