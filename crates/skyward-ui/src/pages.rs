@@ -515,6 +515,9 @@ pub fn mount(cx: &Ctx) -> Frame {
 /// Who made the recovery, as the About page names them under its version.
 const AUTHOR: &str = "© 2026 Kirk Lin";
 
+/// The adaptor who ported this build to the device, set under the author.
+const ADAPTED_BY: &str = "由 zhyukun 进行本机型适配";
+
 /// About this device, modelled on the stock「我的设备」: the wordmark, the
 /// version and its author over a moving colour field, and the summary,
 /// hardware and link cards scrolling over it. Only the cards are drawn
@@ -531,7 +534,7 @@ pub fn about(cx: &Ctx) -> Frame {
     let art = HeroArt {
         wordmark: widgets::wordmark(t, f, "Skyward", m.dp(233.7), m.dp(37.8)),
         version: widgets::version_line(t, f, VERSION),
-        author: widgets::author_line(t, f, AUTHOR),
+        author: widgets::author_line(t, f, AUTHOR, ADAPTED_BY),
         runs: canvas.runs(),
     };
     Frame { header: false, hero: Some(art), ..Frame::new(t, canvas, out, cx.state.lang.pick(ABOUT), summary_top) }
@@ -2711,6 +2714,14 @@ fn online(c: &mut Canvas, cx: &Ctx, y: f32, out: &mut Vec<Hit>) -> f32 {
 
 const NOTES: Text = ["注意事项", "注意事項", "Notes"];
 
+const NOTICE_TITLE: Text = ["适配人员提示", "適配人員提示", "Note from the maintainer"];
+
+const NOTICE_BODY: Text = [
+    "截至 2026-11-15 编译时，上游 Skyward（https://github.com/kirklin/skyward）尚未发布适配本机（REDMI K80 Pro）HyperOS 4.0 的恢复模式映像包。若检测到更新，请务必确认待升级包支持您当前的机型与 Android 版本。因刷入错误映像造成的数据丢失、设备损坏等一切后果，适配人员 zhyukun 概不承担责任。",
+    "截至 2026-11-15 編譯時，上游 Skyward（https://github.com/kirklin/skyward）尚未發布適配本機（REDMI K80 Pro）HyperOS 4.0 的恢復模式映像包。若偵測到更新，請務必確認待升級包支援您目前的機型與 Android 版本。因刷入錯誤映像造成的資料遺失、裝置損壞等一切後果，適配人員 zhyukun 概不承擔責任。",
+    "As of the 2026-11-15 build, upstream Skyward (https://github.com/kirklin/skyward) has not released a recovery image for this phone (REDMI K80 Pro) on HyperOS 4.0. If an update is detected, make sure the package you flash matches your model and Android version. The maintainer zhyukun accepts no liability for any data loss, device damage, or other consequences caused by flashing a wrong image.",
+];
+
 /// What a progress card says of a download, and the share of it done:
 /// what an earlier download left being checked, or the rest coming at
 /// `rate` bytes a second.
@@ -2736,6 +2747,7 @@ pub fn skyward_update(cx: &Ctx) -> Frame {
     let y = widgets::info_card(&mut c, t, f, y, &[(l.pick(["当前版本", "目前版本", "Current version"]), VERSION.to_string())]);
     let y = widgets::section(&mut c, t, f, y, l.pick(["在线更新", "線上更新", "Online update"]));
     let y = skyward_online(&mut c, cx, y, &mut out);
+    let y = widgets::notice_card(&mut c, t, f, y + t.m.card_gap, l.pick(NOTICE_TITLE), l.pick(NOTICE_BODY));
     let points = [
         l.pick([
             "新版本从 GitHub 下载，校验 SHA-256 后写入 recovery 分区，不会改动系统和用户数据。",

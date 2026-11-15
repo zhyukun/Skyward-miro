@@ -2179,6 +2179,39 @@ const NOTES_PAD: f32 = 25.0;
 const NOTES_STEP: f32 = 38.0;
 const NOTES_PITCH: f32 = 18.0;
 
+/// A highlighted maintainer notice: a heading then wrapped body lines, set
+/// larger than the stock [`notes`], as the adaptor's own disclaimer shown
+/// before updating. Returns the card's bottom.
+pub fn notice_card(c: &mut Canvas, t: &Theme, f: &Fonts, top: f32, heading: &str, body: &str) -> f32 {
+    let m = &t.m;
+    let (card_x, right) = (m.margin, m.w as f32 - m.margin);
+    let x = card_x + m.inner;
+    let px = m.dp(NOTICE_PX);
+    let width = right - m.inner - x;
+    let lines = wrap(c, &f.body, body, px, width);
+    let (pad, gap, pitch) = (m.dp(NOTICE_PAD), m.dp(NOTICE_GAP), m.dp(NOTICE_PITCH));
+    let (ht, hb) = f.heading.ink(px);
+    let heading_h = hb - ht;
+    let heading_top = top + pad;
+    let body_top = heading_top + heading_h + gap;
+    let last = body_top + pitch * lines.len().saturating_sub(1) as f32;
+    let bottom = last + pad;
+    c.fill_round_rect(card_x, top, right - card_x, bottom - top, m.card_radius, t.pal.danger_soft);
+    c.text_top(&f.heading, heading, x, heading_top, px, t.pal.danger, Some(width));
+    for (k, l) in lines.iter().enumerate() {
+        c.text_top(&f.body, l, x, body_top + pitch * k as f32, px, t.pal.text, None);
+    }
+    bottom
+}
+
+// The maintainer's notice card, in dp: its text size (two steps above the
+// stock notes' 15.0), the room above the heading and below the last line, the
+// gap from heading to body, and the pitch between body lines.
+const NOTICE_PX: f32 = 18.0;
+const NOTICE_PAD: f32 = 22.0;
+const NOTICE_GAP: f32 = 10.0;
+const NOTICE_PITCH: f32 = 22.0;
+
 /// [`section`] with a word at its right end that does something, such as
 /// the WLAN page's「刷新」: where the word can be touched.
 pub fn section_action(c: &mut Canvas, t: &Theme, f: &Fonts, prev_bottom: f32, label: &str, action: &str) -> (f32, Rect) {
@@ -2213,10 +2246,28 @@ pub fn version_line(t: &Theme, f: &Fonts, text: &str) -> Sprite {
 /// How far below the version, in dp, the author's line stands.
 const AUTHOR_BELOW_DP: f32 = 19.0;
 
-/// Who made the recovery, a line under the version in its type.
-pub fn author_line(t: &Theme, f: &Fonts, text: &str) -> Sprite {
-    hero_line(t, f, text, t.m.dp(AUTHOR_BELOW_DP))
+/// Who made the recovery: the original author line, with the adaptor's
+/// attribution set on a second line under it.
+pub fn author_line(t: &Theme, f: &Fonts, first: &str, second: &str) -> Sprite {
+    let m = &t.m;
+    let px = m.dp(13.3);
+    let w1 = Canvas::new(0, 0).text_width(&f.body, first, px);
+    let w2 = Canvas::new(0, 0).text_width(&f.body, second, px);
+    let w = w1.max(w2);
+    let base1 = m.dp(296.3) + f.body.cap(px) + m.dp(AUTHOR_BELOW_DP);
+    let base2 = base1 + m.dp(AUTHOR_LINE_PITCH);
+    let left = (m.w as f32 - w) / 2.0 - m.dp(2.0);
+    let top = base1 - px * 1.2;
+    let bottom = base2 + px * 0.4;
+    Sprite::capture(left, top, (w + m.dp(4.0)).ceil() as u32, (bottom - top).ceil() as u32, |c, dx, dy| {
+        let cx = m.w as f32 / 2.0;
+        c.text(&f.body, first, cx - w1 / 2.0 + dx, base1 + dy, px, Rgba::rgb(0, 0, 0), None);
+        c.text(&f.body, second, cx - w2 / 2.0 + dx, base2 + dy, px, Rgba::rgb(0, 0, 0), None);
+    })
 }
+
+/// Gap between the author's first and second line, in dp.
+const AUTHOR_LINE_PITCH: f32 = 17.0;
 
 /// A line centred under the About wordmark in the version's type, `below`
 /// the version's place.
