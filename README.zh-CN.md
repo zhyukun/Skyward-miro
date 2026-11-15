@@ -25,6 +25,7 @@
 - **触摸**：锁屏 / 息屏唤醒后仍可用（触摸设置由后台线程每秒定时重写），备份与恢复可用。
 - **data 解密**：冷启动输入锁屏密码可一次解密进入。
 - **WLAN**：peach_v2 主机驱动，`wlan0` 进入 WLAN 页时按需 probe。
+- **振动马达**：沿用 17 Ultra 的谐振频率与强度参数，本机马达实测可用。
 - **其他**：槽位读取、persist 挂载、BootControl 服务、MTP / ADB。
 
 ## 下载
@@ -57,11 +58,10 @@ fastboot reboot recovery
    - 服务就绪竞争的根因尚未确认；strongbox 实例始终未拉起。
    - 错误码 `-28` 的确切枚举名未核实；“立即解密 vs 预热后解密”的对照未做。
    - 整机 s2idle 是否叠加触摸因素，尚未排除。
-2. **WLAN 非致命告警**：`hdd_config_data_stall_param` fail、bmiss sysfs 节点创建失败、6GHz disabled、MLO MLD ID 0 exists；`wlan0` 需进入 WLAN 页才 probe。
-3. **振动马达**：沿用 17 Ultra 的谐振频率与强度参数，尚未在本机马达上实测。
-4. **尚未纳入的上游改动**：open PR #33（crypto 遍历所有 protector）、#29（pack 纳入 stock ramdisk 缺文件）、#60（WLAN firmware alternatives）、#48（myron A17 PIN 解密）、#43（socrates 解密兼容）。
-5. **系统版本**：当前基于 HyperOS 4.0.0.8 基底；升级 4.0.3.0 需重新 dump recovery 基底并重打包。
-6. **更新机制**：仅在手动进入更新页且在线时向上游查询一次；校验 asset 机型名与 SHA-256，**无独立 GPG / 签名验签**。
+2. **WLAN 非致命告警**：`hdd_config_data_stall_param` fail、bmiss sysfs 节点创建失败、6GHz disabled、MLO MLD ID 0 exists。均为驱动在精简 recovery 环境下的配置/能力裁剪告警，2.4 / 5GHz 扫描、关联与联网正常；仅 6GHz 与 MLO 未启用。`wlan0` 需进入 WLAN 页才 probe。
+3. **尚未纳入的上游改动**：open PR #33（crypto 遍历所有 protector）、#29（pack 纳入 stock ramdisk 缺文件）、#60（WLAN firmware alternatives）、#48（myron A17 PIN 解密）、#43（socrates 解密兼容）。
+4. **系统版本**：`[stock]` 配置已登记 OS4.0.3.0.XOMCNXM 基底；当前已发布镜像仍基于 HyperOS 4.0.0.8，按 4.0.3.0 重打包需从新全量包 dump recovery 基底并回填校验值。
+5. **更新机制**：内置更新检查硬编码查询上游 `kirklin/skyward` 最新 Release，本 fork 的 v1 包不会被自检出；上游 Release 无 miro 包时提示无可用更新。仅在手动进入更新页且在线时查询一次；校验 asset 机型名与 SHA-256，**无独立 GPG / 签名验签**。
 
 ## 免责
 

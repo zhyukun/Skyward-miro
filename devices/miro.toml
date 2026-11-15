@@ -104,17 +104,21 @@ probe = "http://connect.rom.miui.com/generate_204"
 server = "https://update.miui.com/updates/miotaV3.php"
 
 # The stock build the recovery is made on: the Chinese system's
-# OS3.0.305.0, whose full update package on the phone maker's own download
-# server holds the recovery partition the recovery is built on top of.
+# OS4.0.3.0.XOMCNXM, whose full update package on the phone maker's own
+# download server holds the recovery partition the recovery is built on top of.
+# TODO(zhyukun): the recovery SHA-256 below still belongs to the old
+# OS3.0.305.0 template package; it must be re-dumped from the 4.0.3.0 full
+# package (or the phone's recovery_a after upgrading) and backfilled before
+# `skyward-pack stock` is run against the new package.
 [stock]
-version = "OS3.0.305.0.WOMCNXM"
-package = "https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS3.0.305.0.WOMCNXM/miro-ota_full-OS3.0.305.0.WOMCNXM-user-16.0-bc8ed08af5.zip"
+version = "OS4.0.3.0.XOMCNXM"
+package = "https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS4.0.3.0.XOMCNXM/miro-ota_full-OS4.0.3.0.XOMCNXM-user-17.0-526d60ce11.zip"
 recovery = "8c0e2edb504f4a0e95d91ad7e5902aedf13bfb81ee514028a94ec089b504932b"
 
 # qcom-hv-haptics (qcom,hv-haptics in its dtbo), whose driver says the
 # motor's resonant frequency as the 17 Ultra's does; the click is made from
-# samples at that frequency, and the strengths are the 17 Ultra's. Neither
-# is yet tried on this phone's motor.
+# samples at that frequency, and the strengths are the 17 Ultra's. Verified
+# working on this phone's motor.
 [haptics]
 resonance = "/sys/class/qcom-haptics/lra_frequency_hz"
 strength = { lightest = 0.25, strongest = 0.75 }
