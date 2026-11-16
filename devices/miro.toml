@@ -106,14 +106,13 @@ server = "https://update.miui.com/updates/miotaV3.php"
 # The stock build the recovery is made on: the Chinese system's
 # OS4.0.3.0.XOMCNXM, whose full update package on the phone maker's own
 # download server holds the recovery partition the recovery is built on top of.
-# TODO(zhyukun): the recovery SHA-256 below still belongs to the old
-# OS3.0.305.0 template package; it must be re-dumped from the 4.0.3.0 full
-# package (or the phone's recovery_a after upgrading) and backfilled before
-# `skyward-pack stock` is run against the new package.
+# Recovery SHA-256 from the OS4.0.3.0.XOMCNXM full package manifest
+# (recovery partition, 104857600 bytes); matches the recovery.img dumped
+# locally from the package and the payload's own recorded hash.
 [stock]
 version = "OS4.0.3.0.XOMCNXM"
 package = "https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS4.0.3.0.XOMCNXM/miro-ota_full-OS4.0.3.0.XOMCNXM-user-17.0-526d60ce11.zip"
-recovery = "8c0e2edb504f4a0e95d91ad7e5902aedf13bfb81ee514028a94ec089b504932b"
+recovery = "2e490b0ceff2cb0a1e17333c58eb01d1220ec787db761a2a84296266842aefd3"
 
 # qcom-hv-haptics (qcom,hv-haptics in its dtbo), whose driver says the
 # motor's resonant frequency as the 17 Ultra's does; the click is made from
