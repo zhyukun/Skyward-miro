@@ -4,8 +4,33 @@
 use anyhow::{bail, ensure, Context, Result};
 use serde::Deserialize;
 
-/// Where GitHub answers which release of Skyward is the newest.
-pub const LATEST: &str = "https://api.github.com/repos/kirklin/skyward/releases/latest";
+/// Which GitHub repository the newest Skyward release is asked from: the
+/// maintainer's upstream, or the fork this phone's build is adapted in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RepoSource {
+    /// The maintainer's upstream repository.
+    Upstream,
+    /// The fork this phone's build is adapted in.
+    Fork,
+}
+
+impl RepoSource {
+    /// Where GitHub answers which release of this source is the newest.
+    pub fn latest(self) -> &'static str {
+        match self {
+            RepoSource::Upstream => "https://api.github.com/repos/kirklin/skyward/releases/latest",
+            RepoSource::Fork => "https://api.github.com/repos/zhyukun/Skyward-miro/releases/latest",
+        }
+    }
+
+    /// The repository's owner and name, such as `kirklin/skyward`.
+    pub fn repo(self) -> &'static str {
+        match self {
+            RepoSource::Upstream => "kirklin/skyward",
+            RepoSource::Fork => "zhyukun/Skyward-miro",
+        }
+    }
+}
 
 /// The version of GitHub's API the answer is read as.
 const API_VERSION: &str = "2022-11-28";
@@ -69,9 +94,9 @@ struct Message {
     message: String,
 }
 
-/// The newest release that `answer`, GitHub's answer at [`LATEST`], tells
-/// of, and its zip for the phone `codename` names, as the build of version
-/// `running` sees it.
+/// The newest release that `answer`, GitHub's answer at
+/// [`RepoSource::latest`], tells of, and its zip for the phone `codename`
+/// names, as the build of version `running` sees it.
 pub fn newest(answer: &str, codename: &str, running: &str) -> Result<Newest> {
     let release: Release = serde_json::from_str(answer).context("read GitHub's answer")?;
     let tag = release.tag_name;
@@ -92,18 +117,19 @@ pub fn newest(answer: &str, codename: &str, running: &str) -> Result<Newest> {
     Ok(Newest { version: version.to_string(), newer: newest > this, build })
 }
 
-/// Ask GitHub for Skyward's newest release, and its zip for the phone
-/// `codename` names, as the build of version `running`.
-pub fn ask(agent: &ureq::Agent, codename: &str, running: &str) -> Result<Newest> {
+/// Ask GitHub at `source` for Skyward's newest release, and its zip for the
+/// phone `codename` names, as the build of version `running`.
+pub fn ask(agent: &ureq::Agent, source: RepoSource, codename: &str, running: &str) -> Result<Newest> {
+    let latest = source.latest();
     let mut response = agent
-        .get(LATEST)
+        .get(latest)
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", API_VERSION)
         .header("User-Agent", format!("Skyward/{running}"))
         .call()
-        .with_context(|| format!("ask {LATEST}"))?;
+        .with_context(|| format!("ask {latest}"))?;
     let status = response.status();
-    let body = response.body_mut().read_to_string().with_context(|| format!("read the answer of {LATEST}"))?;
+    let body = response.body_mut().read_to_string().with_context(|| format!("read the answer of {latest}"))?;
     if !status.is_success() {
         bail!(refusal(status, &body));
     }

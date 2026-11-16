@@ -163,4 +163,22 @@ mod tests {
         app.key(Key::Back, 0);
         assert!(tap(&mut app, &f, &i, Action::Open(Screen::SkywardUpdate)).is_empty(), "an answer heard is not asked again");
     }
+
+    #[test]
+    fn the_update_page_asks_the_fork_first_and_switches_to_the_upstream() {
+        let (f, i) = (fonts(), info());
+        let mut app = App::new(Screen::Settings, W, H, PPD);
+        app.state.wlan = Some(connected("Skyward"));
+        app.state.recovery_partitions = true;
+        assert_eq!(app.state.skyward_source, RepoSource::Fork, "the fork is the default source");
+        app.refresh();
+        assert_eq!(tap(&mut app, &f, &i, Action::Open(Screen::SkywardUpdate)), vec![Effect::CheckSkyward]);
+        app.skyward_checked(Ok(skyward_newest(true)));
+        // Switching source drops the old answer and asks the new repository.
+        assert_eq!(tap(&mut app, &f, &i, Action::PickSkywardSource(RepoSource::Upstream)), vec![Effect::CheckSkyward]);
+        assert_eq!(app.state.skyward_source, RepoSource::Upstream);
+        assert_eq!(app.state.skyward_check, SkywardCheck::Asking);
+        // The source already picked asks for nothing again.
+        assert!(tap(&mut app, &f, &i, Action::PickSkywardSource(RepoSource::Upstream)).is_empty());
+    }
 }

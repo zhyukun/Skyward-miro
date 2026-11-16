@@ -2614,7 +2614,8 @@ impl Pages<'_> {
             Effect::CheckSkyward => {
                 ensure!(self.skyward_checker.is_none(), "GitHub is being asked already");
                 let probe = cfg.wlan.as_ref().context("the phone's WLAN is not brought up")?.probe.clone();
-                let task = updates::Task::CheckSkyward { probe, codename: cfg.device.codename.clone() };
+                let source = self.app.state.skyward_source;
+                let task = updates::Task::CheckSkyward { probe, codename: cfg.device.codename.clone(), source };
                 self.skyward_checker = Some(updates::Worker::start(task, self.servers.clone())?);
             }
             // The zip goes into the recovery's own folder, which is

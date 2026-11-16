@@ -1,7 +1,7 @@
 use crate::app::{
     Action, BackupAt, BackupEnd, BackupJob, Check, ClashChoice, Confirm, Damage, Data, Dock, DownloadEnd, EraseStop, Field, FileKind,
     FileOp, FileTask, Fold, Folder, Frame, FsAction, FsChoice, FsRow, Have, HeroArt, Hit, Install, JobEnd, Keys, Pick, Place, Rows, Screen,
-    SkywardCheck, SkywardEnd, SkywardJob, SkywardStage, Slider, Source, State, Switch, SystemsWork, Target, UsbDrive, UsbLink, Wipe, ADDABLE,
+    RepoSource, SkywardCheck, SkywardEnd, SkywardJob, SkywardStage, Slider, Source, State, Switch, SystemsWork, Target, UsbDrive, UsbLink, Wipe, ADDABLE,
     BACKUP_PARTS, DATA_ERASED, DATA_PARTITION, DOWNLOADS, FASTBOOT_CHOICES, SCREEN_OFF, TARGETS, TIME_ZONES, USB_DRIVE_UNREADABLE,
     USB_DRIVE_WANTED, WIPES, installs, starting,
 };
@@ -2771,6 +2771,14 @@ pub fn skyward_update(cx: &Ctx) -> Frame {
 fn skyward_online(c: &mut Canvas, cx: &Ctx, y: f32, out: &mut Vec<Hit>) -> f32 {
     let (t, f, s, l) = (cx.t, cx.f, cx.state, cx.state.lang);
     let gap = t.m.card_gap;
+    // Which repository the check below asks: this build's fork, or the
+    // upstream one. The answer shown belongs to the source picked here.
+    let sources = widgets::list(c, t, f, y, &[
+        Row::new(l.pick(["我的 fork", "我的 fork", "My fork"])).subtitle(RepoSource::Fork.repo()).trail(Trail::Check(s.skyward_source == RepoSource::Fork)),
+        Row::new(l.pick(["上游", "上游", "Upstream"])).subtitle(RepoSource::Upstream.repo()).trail(Trail::Check(s.skyward_source == RepoSource::Upstream)),
+    ]);
+    out.extend(hits(&sources.rows, &[Action::PickSkywardSource(RepoSource::Fork), Action::PickSkywardSource(RepoSource::Upstream)]));
+    let y = sources.bottom + gap;
     let newest = match &s.skyward_check {
         SkywardCheck::Asking => return widgets::list(c, t, f, y, &[Row::new(l.pick(CHECKING)).trail(Trail::None)]).bottom,
         SkywardCheck::Answered(n) => n,

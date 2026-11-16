@@ -533,6 +533,22 @@ impl App {
                     return vec![Effect::CheckSkyward];
                 }
             }
+            // The chosen source answers a different repository, so the old
+            // answer is dropped and the new one asked for once online.
+            Action::PickSkywardSource(source) => {
+                if self.state.skyward_source == source {
+                    return Vec::new();
+                }
+                self.state.skyward_source = source;
+                if !self.state.online() {
+                    self.state.skyward_check = SkywardCheck::Idle;
+                    self.refresh();
+                    return Vec::new();
+                }
+                self.state.skyward_check = SkywardCheck::Asking;
+                self.refresh();
+                return vec![Effect::CheckSkyward];
+            }
             // The build goes into the recovery partitions an install may
             // write too, so one waits for the other.
             Action::UpdateSkyward => {

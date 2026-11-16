@@ -26,7 +26,7 @@ use crate::widgets::{self, Bar, Bolt, Cap, Layer, WlanMark};
 use skyward_info::DeviceInfo;
 use skyward_install::{Event, ImageKind, Outcome, Reflash, Refusal, Stage};
 use skyward_net::download::{Failure, Progress};
-use skyward_net::github::{Build, Newest};
+pub use skyward_net::github::{Build, Newest, RepoSource};
 use skyward_net::release::{Release, Unanswered};
 use skyward_net::supplicant::Security;
 use skyward_net::wlan::{Joined, Network, Power, Stage as Joining, Traffic, Wlan};
@@ -377,6 +377,9 @@ pub enum Action {
     InstallDownloaded,
     /// Ask GitHub for Skyward's newest release.
     CheckSkyward,
+    /// Ask Skyward's newest release from this GitHub source instead: the
+    /// upstream repository or the fork.
+    PickSkywardSource(RepoSource),
     /// Download the newest release's build for the phone and write it into
     /// the recovery partitions.
     UpdateSkyward,
